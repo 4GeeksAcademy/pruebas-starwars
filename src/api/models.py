@@ -2,18 +2,30 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-class User(db.Model):
+class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    firstname = db.Column(db.String(80), nullable=False)
+    lastname = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
 
-    def __repr__(self):
-        return f'<User {self.email}>'
+class Posts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
 
-    def serialize(self):
-        return {
-            "id": self.id,
-            "email": self.email,
-            # do not serialize the password, its a security breach
-        }
+class Comments(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    comment_text = db.Column(db.String(255), nullable=False)
+    author_id = db.Column(db.Integer, nullable=False)
+    post_id = db.Column(db.Integer, nullable=False)
+
+class Followers(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_from_id = db.Column(db.Integer, nullable=False)
+    user_to_id = db.Column(db.Integer, nullable=False)
+
+class Media(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(10), nullable=False)
+    url = db.Column(db.String(255), nullable=False)
+    post_id = db.Column(db.Integer, nullable=False)
