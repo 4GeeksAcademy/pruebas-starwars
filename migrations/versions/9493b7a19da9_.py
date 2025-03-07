@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 3b7d6ce031d0
-Revises: 1f840f137fd2
-Create Date: 2025-03-07 11:38:11.444703
+Revision ID: 9493b7a19da9
+Revises: 
+Create Date: 2025-03-07 19:03:26.626442
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '3b7d6ce031d0'
-down_revision = '1f840f137fd2'
+revision = '9493b7a19da9'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -50,6 +50,17 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
+    op.create_table('users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('email', sa.String(length=120), nullable=False),
+    sa.Column('password', sa.String(length=80), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_admin', sa.Boolean(), nullable=False),
+    sa.Column('first_name', sa.String(), nullable=True),
+    sa.Column('last_name', sa.String(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email')
+    )
     op.create_table('bills',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('create_at', sa.DateTime(), nullable=False),
@@ -71,6 +82,16 @@ def upgrade():
     sa.UniqueConstraint('character_favourite_user_id'),
     sa.UniqueConstraint('character_id')
     )
+    op.create_table('followers',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('following_id', sa.Integer(), nullable=False),
+    sa.Column('follower_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['follower_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['following_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('follower_id'),
+    sa.UniqueConstraint('following_id')
+    )
     op.create_table('planet_favourites',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('planet_favourite_user_id', sa.Integer(), nullable=False),
@@ -80,6 +101,18 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('planet_favourite_user_id'),
     sa.UniqueConstraint('planet_id')
+    )
+    op.create_table('posts',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=120), nullable=True),
+    sa.Column('description', sa.String(), nullable=True),
+    sa.Column('body', sa.String(length=120), nullable=True),
+    sa.Column('date', sa.DateTime(), nullable=False),
+    sa.Column('image_url', sa.String(length=120), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id')
     )
     op.create_table('bill_items',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -112,99 +145,20 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('post_id')
     )
-    op.drop_table('comments')
-    op.drop_table('media')
-    with op.batch_alter_table('followers', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('following_id', sa.Integer(), nullable=False))
-        batch_op.add_column(sa.Column('follower_id', sa.Integer(), nullable=False))
-        batch_op.create_unique_constraint(None, ['follower_id'])
-        batch_op.create_unique_constraint(None, ['following_id'])
-        batch_op.create_foreign_key(None, 'users', ['following_id'], ['id'])
-        batch_op.create_foreign_key(None, 'users', ['follower_id'], ['id'])
-        batch_op.drop_column('user_from_id')
-        batch_op.drop_column('user_to_id')
-
-    with op.batch_alter_table('posts', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('title', sa.String(length=120), nullable=True))
-        batch_op.add_column(sa.Column('description', sa.String(), nullable=True))
-        batch_op.add_column(sa.Column('body', sa.String(length=120), nullable=True))
-        batch_op.add_column(sa.Column('date', sa.DateTime(), nullable=False))
-        batch_op.add_column(sa.Column('image_url', sa.String(length=120), nullable=True))
-        batch_op.create_unique_constraint(None, ['user_id'])
-        batch_op.create_foreign_key(None, 'users', ['user_id'], ['id'])
-
-    # Modificación para solucionar el problema de la columna 'is_active'
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('is_active', sa.Boolean(), nullable=True))  # Paso 1: Agregar columna con nullable=True
-        batch_op.add_column(sa.Column('password', sa.String(length=80), nullable=True))
-        batch_op.add_column(sa.Column('first_name', sa.String(), nullable=True))
-        batch_op.add_column(sa.Column('last_name', sa.String(), nullable=True))
-        batch_op.drop_constraint('users_username_key', type_='unique')
-        batch_op.drop_column('firstname')
-        batch_op.drop_column('username')
-        batch_op.drop_column('lastname')
-
-    # Paso 2: Llenar valores faltantes
-    op.execute("UPDATE users SET is_active = TRUE WHERE is_active IS NULL")
-
-    # Paso 3: Cambiar columna a NOT NULL
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.alter_column('is_active', nullable=False)
-
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('lastname', sa.VARCHAR(length=80), autoincrement=False, nullable=False))
-        batch_op.add_column(sa.Column('username', sa.VARCHAR(length=80), autoincrement=False, nullable=False))
-        batch_op.add_column(sa.Column('firstname', sa.VARCHAR(length=80), autoincrement=False, nullable=False))
-        batch_op.create_unique_constraint('users_username_key', ['username'])
-        batch_op.drop_column('last_name')
-        batch_op.drop_column('first_name')
-        batch_op.drop_column('is_active')
-        batch_op.drop_column('password')
-
-    with op.batch_alter_table('posts', schema=None) as batch_op:
-        batch_op.drop_constraint(None, type_='foreignkey')
-        batch_op.drop_constraint(None, type_='unique')
-        batch_op.drop_column('image_url')
-        batch_op.drop_column('date')
-        batch_op.drop_column('body')
-        batch_op.drop_column('description')
-        batch_op.drop_column('title')
-
-    with op.batch_alter_table('followers', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('user_to_id', sa.INTEGER(), autoincrement=False, nullable=False))
-        batch_op.add_column(sa.Column('user_from_id', sa.INTEGER(), autoincrement=False, nullable=False))
-        batch_op.drop_constraint(None, type_='foreignkey')
-        batch_op.drop_constraint(None, type_='foreignkey')
-        batch_op.drop_constraint(None, type_='unique')
-        batch_op.drop_constraint(None, type_='unique')
-        batch_op.drop_column('follower_id')
-        batch_op.drop_column('following_id')
-
-    op.create_table('media',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('type', sa.VARCHAR(length=10), autoincrement=False, nullable=False),
-    sa.Column('url', sa.VARCHAR(length=255), autoincrement=False, nullable=False),
-    sa.Column('post_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.PrimaryKeyConstraint('id', name='media_pkey')
-    )
-    op.create_table('comments',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('comment_text', sa.VARCHAR(length=255), autoincrement=False, nullable=False),
-    sa.Column('author_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('post_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.PrimaryKeyConstraint('id', name='comments_pkey')
-    )
     op.drop_table('medias')
     op.drop_table('coments')
     op.drop_table('bill_items')
+    op.drop_table('posts')
     op.drop_table('planet_favourites')
+    op.drop_table('followers')
     op.drop_table('character_favourites')
     op.drop_table('bills')
+    op.drop_table('users')
     op.drop_table('products')
     op.drop_table('planets')
     op.drop_table('characters')

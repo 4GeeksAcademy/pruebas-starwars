@@ -1,7 +1,7 @@
 import os
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-from .models import db, Users, Products, Bills, BillItems, Followers, Posts, Coments, Medias, Planets, PlanetFavourite, Characters, CharacterFavourites
+from .models import db, Users, Products, Bills, BillItems, Followers, Posts, Coments, Medias, Planets, PlanetFavourite, Characters, CharacterFavourites, Starships, StarshipFavourites
 
 def setup_admin(app):
     app.secret_key = os.environ.get('FLASK_APP_KEY', 'sample key')
@@ -21,3 +21,5 @@ def setup_admin(app):
     admin.add_view(ModelView(PlanetFavourite, db.session)) 
     admin.add_view(ModelView(Characters, db.session)) 
     admin.add_view(ModelView(CharacterFavourites, db.session)) 
+    admin.add_view(ModelView(Starships, db.session))
+    admin.add_view(ModelView(StarshipFavourites, db.session))

@@ -9,6 +9,7 @@ class Users(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(80), unique=False, nullable=False)
     is_active = db.Column(db.Boolean(), unique=False, nullable=False)
+    is_admin = db.Column(db.Boolean(), unique=False, nullable=False)
     first_name = db.Column(db.String(), unique=False, nullable=True)
     last_name = db.Column(db.String(), unique=False, nullable=True)
 
@@ -16,10 +17,10 @@ class Users(db.Model):
         return f'<User: {self.email}>'
 
     def serialize(self):
-        # No serializar la contraseña, es un riesgo de seguridad
         return {'id': self.id,
                 'email': self.email,
                 'is_active': self.is_active,
+                'is_admin': self.is_admin,
                 'first_name': self.first_name,
                 'last_name': self.last_name}
 
@@ -170,7 +171,7 @@ class Planets(db.Model):
 
 
 class PlanetFavourite(db.Model):
-    __tablename__ = "planet_favourites"  # Esto es necesario para que Flask interprete de esta manera el nombre y no lo haga de otra forma distinta
+    __tablename__ = "planet_favourites"
     id = db.Column(db.Integer, primary_key=True)
     planet_favourite_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
     planet_favourite_user_to = db.relationship("Users", foreign_keys=[planet_favourite_user_id], backref=db.backref("planet_favourite_user_to", lazy="select"))
@@ -206,7 +207,7 @@ class Characters(db.Model):
 
 
 class CharacterFavourites(db.Model):
-    __tablename__ = "character_favourites"  # Esto es necesario para que Flask interprete de esta manera el nombre y no lo haga de otra forma distinta
+    __tablename__ = "character_favourites" 
     id = db.Column(db.Integer, primary_key=True)
     character_favourite_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
     character_favourite_user_to = db.relationship("Users", foreign_keys=[character_favourite_user_id], backref=db.backref("character_favourite_user_to", lazy="select"))
@@ -220,3 +221,37 @@ class CharacterFavourites(db.Model):
         return{'id': self.id,
                'character id': self.character_id,
                'character favourite': self.character_favourite_user_to}
+
+class Starships(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), unique=False, nullable=True)
+    starship_class = db.Column(db.String(120), unique=False, nullable=True)
+    manufacturer = db.Column(db.String(120), unique=False, nullable=True)
+    cost = db.Column(db.String(120), unique=False, nullable=True)
+    length = db.Column(db.String(120), unique=False, nullable=True)
+    crew = db.Column(db.String(120), unique=False, nullable=True)
+    passengers = db.Column(db.String(120), unique=False, nullable=True)
+    consumables = db.Column(db.String(120), unique=False, nullable=False)
+
+    def __repr__(self):
+        return f'<Planet: {self.name} - {self.id} >'
+    
+    def serialize(self):
+        return{'id': self.id,
+               'name': self.name}
+
+class StarshipFavourites(db.Model):
+    __tablename__ = "starship_favourites" 
+    id = db.Column(db.Integer, primary_key=True)
+    starship_favourite_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
+    starship_favourite_user_to = db.relationship("Users", foreign_keys=[starship_favourite_user_id], backref=db.backref("starship_favourite_user_to", lazy="select"))
+    starship_id = db.Column(db.Integer, db.ForeignKey("starships.id"), unique=True, nullable=False)
+    starship_to = db.relationship("Starships", foreign_keys=[starship_id], backref=db.backref("starship_to", lazy="select"))
+
+    def __repr__(self):
+        return f'<Starship Favourite: {self.starship_favourite_user_to} - {self.starship_id} >'
+    
+    def serialize(self):
+        return{'id': self.id,
+               'starship id': self.starship_id,
+               'starship favourite': self.starship_favourite_user_to}
