@@ -10,6 +10,7 @@ import { Contacts } from "./pages/contacts.jsx";
 import { Characters } from "./pages/characters.jsx";
 import { Starships } from "./pages/starships.jsx";
 import { Planets } from "./pages/planets.jsx";
+import { Login } from "./pages/login.jsx";
 import injectContext from "./store/appContext";
 
 import { Navbar } from "./component/navbar";
@@ -31,6 +32,7 @@ const Layout = () => {
                             <Route element={<Demo />} path="/demo" />
                             <Route element={<Single />} path="/single/:theid" />
                             <Route element={<Contacts />} path="/contacts" />
+                            <Route element={<Login />} path="/login" />
                             <Route element={<Characters />} path="/characters" />
                             <Route element={<Characters />} path="/characters/:uid" />
                             <Route element={<Starships />} path="/starships" />

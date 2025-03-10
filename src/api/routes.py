@@ -9,6 +9,7 @@ import requests
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_jwt
 
 api = Blueprint('api', __name__)
 CORS(api)  # Permitir solicitudes CORS
@@ -41,7 +42,13 @@ def login():
     if not row:
         response_body['message'] = "Bad username or password"
         return response_body, 401
-    access_token = create_access_token(identity=email)
+    
+    user = row.serialize()
+    claims = {'user_id': user['id'],
+              'is_admin': user['is_admin']}
+    print(claims)
+
+    access_token = create_access_token(identity=email, additional_claims=claims)
     response_body['message'] = 'User logged!'
     response_body['access_token'] = access_token
     return response_body, 200
@@ -54,7 +61,10 @@ def protected():
     # Access the identity of the current user with get_jwt_identity
     response_body = {}
     current_user = get_jwt_identity()
-    response_body['message'] = f'User logged: {current_user}'
+
+    additional_claims = get_jwt()
+    
+    response_body['message'] = f'User logged: {current_user} - {additional_claims}'
     return response_body, 200
 
 @api.route('/products', methods=['GET', 'POST'])
@@ -78,6 +88,7 @@ def products():
         return jsonify(response_body), 200
 
 @api.route('/products/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+@jwt_required()
 def product(id):
     response_body = {}
     row = db.session.execute(db.select(Products).where(Products.id == id)).scalar()
@@ -90,6 +101,10 @@ def product(id):
         response_body['message'] = f'Respuesta para el metodo {request.method} del id: {id}'
         return jsonify(response_body), 200
     if request.method == 'PUT':
+        additional_claims = get_jwt()
+        if not additional_claims['is_admin']:
+            response_body['message'] = 'Tu no eres admin'
+            return response_body, 401
         data = request.json
         row.name = data.get('name', row.name)
         row.description = data.get('description', row.description)

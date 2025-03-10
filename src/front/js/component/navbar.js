@@ -31,6 +31,11 @@ export const Navbar = () => {
                 <div className="collapse navbar-collapse" id="navbarNav">
                     <ul className="navbar-nav me-auto mb-2 mb-lg-0">
                         <li className="nav-item">
+                            <Link to="/login" className="nav-link text-warning">
+                                Login
+                            </Link>
+                        </li>
+                        <li className="nav-item">
                             <Link to="/characters" className="nav-link text-warning">
                                 Characters
                             </Link>
