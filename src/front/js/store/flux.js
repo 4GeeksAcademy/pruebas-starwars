@@ -1,6 +1,8 @@
 const getState = ({ getStore, getActions, setStore }) => {
     return {
         store: {
+            token: sessionStorage.getItem("token") || null,
+            user: sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : null,
             message: null,
             contacts: [],
             characters: [],
@@ -9,6 +11,70 @@ const getState = ({ getStore, getActions, setStore }) => {
             favorites: [],
         },
         actions: {
+
+            signup: async (email, password, first_name, last_name) => {
+                try {
+                    const response = await fetch("https://reimagined-space-system-x5vpvvjqwrjvfppq-3001.app.github.dev/api/users", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            email: email,
+                            password: password,
+                            first_name: first_name,
+                            last_name: last_name
+                        }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        return { success: true, message: "Cuenta creada exitosamente, inicia sesión." };
+                    } else {
+                        return { success: false, message: data.message || "Error al crear la cuenta" };
+                    }
+                } catch (error) {
+                    console.error("Error en el registro", error);
+                    return { success: false, message: "Error de conexión con el servidor" };
+                }
+            },
+
+            login: async (email, password) => {
+                try {
+                    const response = await fetch("https://reimagined-space-system-x5vpvvjqwrjvfppq-3001.app.github.dev/api/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.results.length > 0) {
+                        const user = data.results[0];
+
+                        sessionStorage.setItem("token", data.token);
+                        sessionStorage.setItem("user", JSON.stringify(user));
+
+                        setStore({ token: data.token, user: user });
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } catch (error) {
+                    console.error("Error en la autenticación", error);
+                    return false;
+                }
+            },
+
+            logout: () => {
+                sessionStorage.removeItem("token");
+                sessionStorage.removeItem("user"); 
+                setStore({ token: null, user: null });
+            },
+
+            isAuthenticated: () => {
+                return !!getStore().token;
+            },
+
             loadContacts: async () => {
                 try {
                     const response = await fetch("https://playground.4geeks.com/contact/agendas/JaimeGHE/contacts");

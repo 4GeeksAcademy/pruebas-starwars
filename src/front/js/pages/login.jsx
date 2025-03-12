@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const Login = () => {
   const [email, setEmail] = useState("");
@@ -6,6 +7,14 @@ export const Login = () => {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("danger");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,26 +24,34 @@ export const Login = () => {
     try {
       const response = await fetch("https://reimagined-space-system-x5vpvvjqwrjvfppq-3001.app.github.dev/api/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       
       const data = await response.json();
 
       if (response.ok) {
-        setMessage("Inicio de sesión exitoso");
-        setMessageType("success");
+        sessionStorage.setItem("token", data.token);
+        if (isMounted.current) {
+          setMessage("Inicio de sesión exitoso");
+          setMessageType("success");
+          window.location.href = "https://reimagined-space-system-x5vpvvjqwrjvfppq-3000.app.github.dev/";
+        }
       } else {
-        setMessage(data.message || "Error en el inicio de sesión");
-        setMessageType("danger");
+        if (isMounted.current) {
+          setMessage(data.message || "Error en el inicio de sesión");
+          setMessageType("danger");
+        }
       }
     } catch (error) {
-      setMessage("Error de conexión con el servidor");
-      setMessageType("danger");
+      if (isMounted.current) {
+        setMessage("Error de conexión con el servidor");
+        setMessageType("danger");
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
 

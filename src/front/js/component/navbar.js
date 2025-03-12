@@ -1,9 +1,20 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Context } from "../store/appContext";
+import { useNavigate } from "react-router-dom";
 
 export const Navbar = () => {
     const { store, actions } = useContext(Context);
+    console.log("Usuario en Navbar:", store.user);
+    console.log("Token en Navbar:", store.token);
+
+    const navigate = useNavigate();
+
+
+    const handleLogout = () => {
+        actions.logout();
+        navigate("/");
+    };
 
     return (
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-warning">
@@ -28,11 +39,18 @@ export const Navbar = () => {
                 >
                     <span className="navbar-toggler-icon"></span>
                 </button>
-                <div className="collapse navbar-collapse" id="navbarNav">
+                <div className="collapse navbar-collapse d-flex justify-content-between" id="navbarNav">
                     <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+                        {!store.token && (
+                            <li className="nav-item">
+                                <Link to="/login" className="nav-link text-warning">
+                                    Login
+                                </Link>
+                            </li>
+                        )}
                         <li className="nav-item">
-                            <Link to="/login" className="nav-link text-warning">
-                                Login
+                            <Link to="/signup" className="nav-link text-warning">
+                                Signup
                             </Link>
                         </li>
                         <li className="nav-item">
@@ -56,7 +74,18 @@ export const Navbar = () => {
                             </Link>
                         </li>
                     </ul>
-                    <div className="dropdown">
+
+                    {store.user && (
+                        <span className="text-warning me-3">Bienvenido, {store.user.first_name}</span>
+                    )}
+
+                    {store.token ? (
+                        <button className="btn btn-outline-danger" onClick={handleLogout}>
+                            Cerrar Sesión
+                        </button>
+                    ) : null}
+
+                    <div className="dropdown ms-3">
                         <button
                             className="btn btn-outline-warning dropdown-toggle"
                             type="button"

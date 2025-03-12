@@ -20,14 +20,42 @@ def handle_hello():
     response_body["message"] = "Hello! I'm a message that came from the backend, check the network tab on the google inspector and you will see the GET request"
     return jsonify(response_body), 200
 
-@api.route('/users', methods=['GET'])
+@api.route('/users', methods=['GET', 'POST'])
 def users():
     response_body = {}
-    rows = db.session.execute(db.select(Users)).scalars()  # Obtener todos los usuarios
-    results = [row.serialize() for row in rows]  # Serializar cada usuario
-    response_body["message"] = 'Listado de Usuarios'
-    response_body["results"] = results
-    return jsonify(response_body), 200
+
+    if request.method == 'GET':
+        rows = db.session.execute(db.select(Users)).scalars() 
+        results = [row.serialize() for row in rows]
+        response_body["message"] = 'Listado de Usuarios'
+        response_body["results"] = results
+        return jsonify(response_body), 200
+
+    if request.method == 'POST':
+        data = request.json
+
+        existing_user = db.session.execute(db.select(Users).where(Users.email == data.get('email'))).scalar()
+        if existing_user:
+            return jsonify({"message": "El email ya está en uso"}), 400
+
+        if not data.get("email") or not data.get("password"):
+            return jsonify({"message": "Email y contraseña son obligatorios"}), 400
+
+        new_user = Users(
+            email=data["email"],
+            first_name=data.get("first_name", ""), 
+            last_name=data.get("last_name", ""), 
+            password=data["password"], 
+            is_active=True,
+            is_admin=False 
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        response_body["message"] = "Usuario creado exitosamente"
+        response_body["user"] = new_user.serialize()
+        return jsonify(response_body), 201  # 201 = Created
 
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
@@ -51,6 +79,7 @@ def login():
     access_token = create_access_token(identity=email, additional_claims=claims)
     response_body['message'] = 'User logged!'
     response_body['access_token'] = access_token
+    response_body['results'] = user
     return response_body, 200
 
 # Protect a route with jwt_required, which will kick out requests
